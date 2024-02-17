@@ -109,17 +109,42 @@ See also `outline-regexp'.")
   "DokuWiki face for smiley."
   :group 'dokuwiki)
 
-(defface yellow-highlight '((t (:background "yellow")))
-  "Face for yellow highlight")
+(defface light-green-highlight '((t (:background "light green")))
+  "Face for light green highlight")
+
+(defvar dokuwiki-hide-markup nil
+  "Determines whether markup in the buffer will be hidden.")
+
+(defun dokuwiki-toggle-markup-hiding (&optional arg)
+  "Toggle the display or hiding of dokuwiki markup."
+  (interactive (list (or current-prefix-arg 'toggle)))
+  (setq dokuwiki-hide-markup
+        (if (eq arg 'toggle)
+            (not dokuwiki-hide-markup)
+          (> (prefix-numeric-value arg) 0)))
+  (if dokuwiki-hide-markup
+      (progn (add-to-invisibility-spec 'dokuwiki-markup)
+             (message "dokuwiki-mode markup hiding enabled"))
+    (progn (remove-from-invisibility-spec 'dokuwiki-markup)
+           (message "dokuwiki-mode markup hiding disabled"))))
+
+(make-variable-buffer-local 'dokuwiki-hide-markup)
+
+(defun dokuwiki-font-lock-bold (beg end)
+  "Hide bold markup and apply bold face between BEG and END."
+  (when dokuwiki-hide-markup
+    (dokuwiki-font-lock-hide-markup beg (+ beg 2))
+    (dokuwiki-font-lock-hide-markup (- end 2) end))
+  (add-text-properties (+ beg 2) (- end 2) '(face bold)))
 
 (defvar dokuwiki-font-lock-keywords
   `(
    ;; bold
-   ("\\*\\*.+?\\*\\*" (0 'bold append))
+   ("\\(\\*\\*\\)\\(.+?\\)\\(\\*\\*\\)" (0 (dokuwiki-font-lock-bold (match-beginning 0) (match-end 0))))
    ;; italic
    ("//.+?//" . (0 'italic append))
    ;; underline
-   ("__.+?__" . (0 'yellow-highlight append))
+   ("__.+?__" . (0 'light-green-highlight append))
    ;; monospace
    ("''\\(.+?\\)''" (0 'dokuwiki-code append) (1 'dokuwiki-box append))
    ;; verbatim
