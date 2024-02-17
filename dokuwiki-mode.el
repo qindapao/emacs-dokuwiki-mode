@@ -109,6 +109,9 @@ See also `outline-regexp'.")
   "DokuWiki face for smiley."
   :group 'dokuwiki)
 
+(defface yellow-highlight '((t (:background "yellow")))
+  "Face for yellow highlight")
+
 (defvar dokuwiki-font-lock-keywords
   `(
    ;; bold
@@ -116,7 +119,7 @@ See also `outline-regexp'.")
    ;; italic
    ("//.+?//" . (0 'italic append))
    ;; underline
-   ("__.+?__" . (0 'underline append))
+   ("__.+?__" . (0 'yellow-highlight append))
    ;; monospace
    ("''\\(.+?\\)''" (0 'dokuwiki-code append) (1 'dokuwiki-box append))
    ;; verbatim
@@ -201,5 +204,60 @@ See also `outline-level'."
   )
 
 (provide 'dokuwiki-mode)
+
+(defun dokuwiki-imenu-create-nested-index ()
+  "Create and return a nested imenu index alist for the current buffer."
+  (let* ((root (list nil))
+         (min-level 9999)
+         headers)
+    (save-excursion
+      ;; Headings
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(==+\\) \\(.*?\\) \\1$" (point-max) t)
+        (let* ((hashes (match-string-no-properties 1))
+               (heading (match-string-no-properties 2))
+               (level (- 6 (length hashes))))
+          (setq min-level (min min-level level))
+          (push (list :heading heading
+                      :point (match-beginning 0)
+                      :level (- level (1- min-level))) headers)))
+      (cl-loop with cur-level = 0
+               with cur-alist = nil
+               with empty-heading = "-"
+               with self-heading = "."
+               for header in (reverse headers)
+               for level = (plist-get header :level)
+               do
+               (let ((alist (list (cons (plist-get header :heading) (plist-get header :point)))))
+                 (cond
+                  ((= cur-level level)  ; new sibling
+                   (setcdr cur-alist alist)
+                   (setq cur-alist alist))
+                  ((< cur-level level)  ; first child
+                   (dotimes (_ (- level cur-level 1))
+                     (setq alist (list (cons empty-heading alist))))
+                   (if cur-alist
+                       (let* ((parent (car cur-alist))
+                              (self-pos (cdr parent)))
+                         (setcdr parent (cons (cons self-heading self-pos) alist)))
+                     (setcdr root alist)) ; primogenitor
+                   (setq cur-alist alist)
+                   (setq cur-level level))
+                  (t                    ; new sibling of an ancestor
+                   (let ((sibling-alist (last (cdr root))))
+                     (dotimes (_ (1- level))
+                       (setq sibling-alist (last (cdar sibling-alist))))
+                     (setcdr sibling-alist alist)
+                     (setq cur-alist alist))
+                   (setq cur-level level)))))
+      (setq root (copy-tree root))
+      (cdr root))))
+
+(defun dokuwiki-setup ()
+  "Setup imenu for dokuwiki mode."
+  (setq imenu-sort-function nil)  ; do not sort the imenu entries
+  (setq imenu-create-index-function 'dokuwiki-imenu-create-nested-index))  ; use the custom index function
+
+(add-hook 'dokuwiki-mode-hook 'dokuwiki-setup)  ; add the setup function to the dokuwiki mode hook
 
 ;;; dokuwiki-mode.el ends here
