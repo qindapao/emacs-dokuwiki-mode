@@ -253,6 +253,45 @@ See also `outline-level'."
       (setq root (copy-tree root))
       (cdr root))))
 
+(defun dokuwiki-display-inline-images ()
+  "Add inline image overlays to image links in the buffer."
+  (interactive)
+  (unless (display-images-p)
+    (error "Cannot show images"))
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-char (point-min))
+      ;; Update the regex to match DokuWiki's image format
+      (let ((dokuwiki-regex-image "{{\\.\\(.*?\\)\\(\\.png\\|\\.jpg\\|\\.jpeg\\|\\.gif\\)\\(\\?width=\\([0-9]+\\)\\)?\\(\\?height=\\([0-9]+\\)\\)?}}"))
+        (while (re-search-forward dokuwiki-regex-image nil t)
+          (let* ((start (match-beginning 0))
+                 (end (match-end 0))
+                 ;; Update the file path according to DokuWiki's file structure
+                 (file (concat (file-name-sans-extension (buffer-file-name)) "/"
+                               (match-string-no-properties 1) (match-string-no-properties 2)))
+                 (width (and (match-string-no-properties 4)
+                             (string-to-number (match-string-no-properties 4))))
+                 (height (and (match-string-no-properties 6)
+                              (string-to-number (match-string-no-properties 6)))))
+            (when (file-exists-p file)
+              (let* ((image (create-image file nil nil :width width :height height)))
+                (when image
+                  (let ((ov (make-overlay start end)))
+                    (overlay-put ov 'display image)
+                    (overlay-put ov 'face 'default)))))))))))
+
+(defun dokuwiki-remove-inline-images ()
+  "Remove all overlays in the buffer."
+  (interactive)
+  (remove-overlays))
+
+(defun dokuwiki-refresh-inline-images ()
+  "Refresh inline image overlays in the buffer."
+  (interactive)
+  (dokuwiki-remove-inline-images)
+  (dokuwiki-display-inline-images))
+
 (defun dokuwiki-setup ()
   "Setup imenu for dokuwiki mode."
   (setq imenu-sort-function nil)  ; do not sort the imenu entries
