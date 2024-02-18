@@ -57,7 +57,7 @@ See also `outline-regexp'.")
 (defface dokuwiki-box '((t (:box t)))
   "Face enabled box property")
 
-(defface dokuwiki-code '((t (:inherit shadow)))
+(defface dokuwiki-code '((t (:inherit shadow :foreground "forest green")))
   "DokuWiki face for code."
   :group 'dokuwiki)
 
@@ -111,6 +111,9 @@ See also `outline-regexp'.")
 
 (defface light-green-highlight '((t (:background "light green")))
   "Face for light green highlight")
+  
+(defface light-gray-highlight '((t (:background "light gray")))
+  "Face for light gray highlight")
 
 (defvar dokuwiki-hide-markup nil
   "Determines whether markup in the buffer will be hidden.")
@@ -126,41 +129,178 @@ See also `outline-regexp'.")
       (progn (add-to-invisibility-spec 'dokuwiki-markup)
              (message "dokuwiki-mode markup hiding enabled"))
     (progn (remove-from-invisibility-spec 'dokuwiki-markup)
-           (message "dokuwiki-mode markup hiding disabled"))))
+           (message "dokuwiki-mode markup hiding disabled")))
+  (with-silent-modifications
+    (remove-text-properties (point-min) (point-max) '(invisible nil face nil)))
+  (font-lock-flush)
+  (font-lock-ensure))
+
 
 (make-variable-buffer-local 'dokuwiki-hide-markup)
 
 (defun dokuwiki-font-lock-bold (beg end)
   "Hide bold markup and apply bold face between BEG and END."
   (when dokuwiki-hide-markup
-    (dokuwiki-font-lock-hide-markup beg (+ beg 2))
-    (dokuwiki-font-lock-hide-markup (- end 2) end))
-  (add-text-properties (+ beg 2) (- end 2) '(face bold)))
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 2) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 2) (- end 2) '(face bold)))
 
+
+(defun dokuwiki-font-lock-italic (beg end)
+  "Hide italic markup and apply italic face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 2) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 2) (- end 2) '(face light-gray-highlight)))
+
+(defun dokuwiki-font-lock-underline (beg end)
+  "Hide underline markup and apply underline face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 2) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 2) (- end 2) '(face light-green-highlight)))
+
+
+(defun dokuwiki-font-lock-monospace (beg end)
+  "Hide monospace markup and apply monospace face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 2) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 2) (- end 2) '(face dokuwiki-code)))
+
+
+(defun dokuwiki-font-lock-headline-1 (beg end)
+  "Hide headline markup and apply headline face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 7) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 7) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 7) (- end 7) '(face dokuwiki-headline-1)))
+
+(defun dokuwiki-font-lock-headline-2 (beg end)
+  "Hide headline markup and apply headline face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 6) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 6) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 6) (- end 6) '(face dokuwiki-headline-2)))
+
+(defun dokuwiki-font-lock-headline-3 (beg end)
+  "Hide headline markup and apply headline face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 5) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 5) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 5) (- end 5) '(face dokuwiki-headline-3)))
+
+(defun dokuwiki-font-lock-headline-4 (beg end)
+  "Hide headline markup and apply headline face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 4) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 4) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 4) (- end 4) '(face dokuwiki-headline-4)))
+
+(defun dokuwiki-font-lock-headline-5 (beg end)
+  "Hide headline markup and apply headline face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 3) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 3) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 3) (- end 3) '(face dokuwiki-headline-5)))
+
+(defun dokuwiki-font-lock-link (beg end)
+  "Hide link target and apply link face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 2) end '(invisible dokuwiki-markup)))
+  (let ((link-text-start (+ beg 2))
+        (link-text-end (- end 2)))
+    (when (match-string 3)  ; if there is link text
+      (set-text-properties link-text-start link-text-end '(face dokuwiki-link))
+      (set-text-properties (+ beg 2) (+ beg 3 (length (match-string 1))) '(invisible dokuwiki-markup)))))
+
+; (defun dokuwiki-font-lock-anchor (beg end)
+;   "Hide anchor markup and apply anchor face between BEG and END."
+;   (let ((original-text (buffer-substring beg end)))
+;     (when dokuwiki-hide-markup
+;       (remove-text-properties beg end '(invisible nil face nil))
+;       (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+;       (set-text-properties (- end 2) end '(invisible dokuwiki-markup))
+;       (set-text-properties (+ beg 2) (- end 2) '(display (propertize "O" 'face '(:foreground "red")))))
+;     (unless dokuwiki-hide-markup
+;       (set-text-properties beg end '(display original-text)))))
+
+(defun dokuwiki-font-lock-anchor (beg end)
+  "Hide anchor markup and apply anchor face between BEG and END."
+  (let ((original-text (buffer-substring beg end)))
+    (when dokuwiki-hide-markup
+      (remove-text-properties beg end '(invisible nil face nil))
+      (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+      (set-text-properties (- end 2) end '(invisible dokuwiki-markup))
+      (let ((o-pos (+ beg 2)))
+        (set-text-properties o-pos (- end 2) '(display (propertize "O" 'face '(:foreground "red")) face '(:foreground "red")))))
+    (unless dokuwiki-hide-markup
+      (set-text-properties beg end '(display original-text face '(:foreground "blue"))))))
+
+
+(defun dokuwiki-font-lock-strikethrough (beg end)
+  "Hide strikethrough markup and apply strikethrough face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 2) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 2) (- end 2) '(face (:strike-through t))))
+
+; :TODO: 所有的标记识别要绕开''' ''' 多行代码块
 (defvar dokuwiki-font-lock-keywords
   `(
    ;; bold
-   ("\\(\\*\\*\\)\\(.+?\\)\\(\\*\\*\\)" (0 (dokuwiki-font-lock-bold (match-beginning 0) (match-end 0))))
+   ("\\(\\*\\*\\)\\([^*]+\\)\\(\\*\\*\\)" (0 (dokuwiki-font-lock-bold (match-beginning 0) (match-end 0))))
    ;; italic
-   ("//.+?//" . (0 'italic append))
+   ("\\(//\\)\\([^/]+\\)\\(//\\)" (0 (dokuwiki-font-lock-italic (match-beginning 0) (match-end 0))))
    ;; underline
-   ("__.+?__" . (0 'light-green-highlight append))
+   ("\\(__\\)\\([^_]+\\)\\(__\\)" (0 (dokuwiki-font-lock-underline (match-beginning 0) (match-end 0))))
    ;; monospace
-   ("''\\(.+?\\)''" (0 'dokuwiki-code append) (1 'dokuwiki-box append))
+   ("\\(''\\)\\([^']+\\)\\(''\\)" (0 (dokuwiki-font-lock-monospace (match-beginning 0) (match-end 0))))
    ;; verbatim
    ("%%.+?%%" (0 'dokuwiki-code t))
    ;; footnote
    ("((.+?))" (0 'dokuwiki-footnote))
    ;; headline
-   (" ?======.+======[ \t]*$" (0 'dokuwiki-headline-1))
-   (" ?=====.+=====[ \t]*$" (0 'dokuwiki-headline-2))
-   (" ?====.+====[ \t]*$" (0 'dokuwiki-headline-3))
-   (" ?===.+===[ \t]*$" (0 'dokuwiki-headline-4))
-   (" ?==.+==[ \t]*$" (0 'dokuwiki-headline-5))
+   ;; 标题中不运行出现等号
+   ("\\( ?======\\)\\([^=]+\\)\\(======[ \t]*$\\)" (0 (dokuwiki-font-lock-headline-1 (match-beginning 0) (match-end 0))))
+   ("\\( ?=====\\)\\([^=]+\\)\\(=====[ \t]*$\\)" (0 (dokuwiki-font-lock-headline-2 (match-beginning 0) (match-end 0))))
+   ("\\( ?====\\)\\([^=]+\\)\\(====[ \t]*$\\)" (0 (dokuwiki-font-lock-headline-3 (match-beginning 0) (match-end 0))))
+   ("\\( ?===\\)\\([^=]+\\)\\(===[ \t]*$\\)" (0 (dokuwiki-font-lock-headline-4 (match-beginning 0) (match-end 0))))
+   ("\\( ?==\\)\\([^=]+\\)\\(==[ \t]*$\\)" (0 (dokuwiki-font-lock-headline-5 (match-beginning 0) (match-end 0))))
    ;; link
-   ("\\[\\[[^|]+?\\(?:\\(|\\)\\(.*?\\)\\)?\\]\\]"
-    (0 'dokuwiki-link) (1 'dokuwiki-code t t)
-    (2 'font-lock-string-face t t) (2 'underline append t))
+   ;; ("\\[\\[[^|]+?\\(?:\\(|\\)\\(.*?\\)\\)?\\]\\]"
+   ;;  (0 'dokuwiki-link) (1 'dokuwiki-code t t)
+   ;;  (2 'font-lock-string-face t t) (2 'underline append t)) 
+   ("\\[\\[\\([^]|]+?\\)\\(?:\\(|\\)\\([^]]*?\\)\\)?\\]\\]"
+     (0 (dokuwiki-font-lock-link (match-beginning 0) (match-end 0))))
+    
+   ;; anchor
+   ("\\({{id: \\)\\([^}]+\\)\\(}}\\)" (0 (dokuwiki-font-lock-anchor (match-beginning 0) (match-end 0))))
+   
+   ;; strikethrough
+   ("\\(~~\\)\\([^~]+\\)\\(~~\\)" (0 (dokuwiki-font-lock-strikethrough (match-beginning 0) (match-end 0))))
+
+(defun dokuwiki-font-lock-strikethrough (beg end)
+  "Hide strikethrough markup and apply strikethrough face between BEG and END."
+  (when dokuwiki-hide-markup
+    (remove-text-properties beg end '(invisible nil face nil))
+    (set-text-properties beg (+ beg 2) '(invisible dokuwiki-markup))
+    (set-text-properties (- end 2) end '(invisible dokuwiki-markup)))
+  (set-text-properties (+ beg 2) (- end 2) '(face (:strike-through t))))
+
+    
    ("https?://\\(\\([-_.!~*'()a-zA-Z0-9;?:@&=+$,%#]+\\)/?\\)+" (0 'dokuwiki-link))
    ;; image
    ("{{[^|]+?\\(|\\(.*?\\)\\)?}}"
@@ -230,6 +370,11 @@ See also `outline-level'."
 
 (provide 'dokuwiki-mode)
 
+
+
+
+
+
 (defun dokuwiki-imenu-create-nested-index ()
   "Create and return a nested imenu index alist for the current buffer."
   (let* ((root (list nil))
@@ -278,6 +423,7 @@ See also `outline-level'."
       (setq root (copy-tree root))
       (cdr root))))
 
+
 (defun dokuwiki-display-inline-images ()
   "Add inline image overlays to image links in the buffer."
   (interactive)
@@ -304,7 +450,18 @@ See also `outline-level'."
                 (when image
                   (let ((ov (make-overlay start end)))
                     (overlay-put ov 'display image)
-                    (overlay-put ov 'face 'default)))))))))))
+                    (overlay-put ov 'face 'default)
+                    ;; Add a mouse click event to the overlay
+                    (overlay-put ov 'mouse-face 'highlight)
+                    (overlay-put ov 'help-echo "mouse-1: Open this image in a new buffer")
+                    (overlay-put ov 'keymap (let ((map (make-sparse-keymap)))
+                                              (define-key map [mouse-1]
+                                                `(lambda ()
+                                                   (interactive)
+                                                   (find-file ,file)))
+                                              map))))))))))))
+
+
 
 (defun dokuwiki-remove-inline-images ()
   "Remove all overlays in the buffer."
